@@ -10,6 +10,7 @@ import {
   useState
 } from 'react'
 import { Flex, Heading, IconButton, ScrollArea, Tooltip } from '@radix-ui/themes'
+import ConfettiExplosion from 'react-confetti-explosion'; // Import ConfettiExplosion
 import ContentEditable from 'react-contenteditable'
 import toast from 'react-hot-toast'
 import { AiOutlineClear, AiOutlineLoading3Quarters, AiOutlineUnorderedList } from 'react-icons/ai'
@@ -55,6 +56,10 @@ const Chat = (props: ChatProps, ref: any) => {
 
   const [isLoading, setIsLoading] = useState(false)
 
+  const [buttonData, setButtonData] = useState(null)
+
+  const [isExploding, setIsExploding] = useState(false)
+
   const conversationRef = useRef<ChatMessage[]>()
 
   const [message, setMessage] = useState('')
@@ -76,6 +81,7 @@ const Chat = (props: ChatProps, ref: any) => {
           toast.error('Please type a message to continue.')
           return
         }
+        setButtonData(null)
 
         const message = [...conversation.current]
         conversation.current = [...conversation.current, { content: input, role: 'user' }]
@@ -95,12 +101,20 @@ const Chat = (props: ChatProps, ref: any) => {
             const decoder = new TextDecoder('utf-8')
             let done = false
             let resultContent = ''
+            let resultAction = ''
+            let streamingAction = false
+            const delimiter = "O^%^£O"
+            let delimiterIndex = -1
+            let buffer = ""
 
             while (!done) {
               try {
                 const { value, done: readerDone } = await reader.read()
                 const char = decoder.decode(value)
-                if (char) {
+                buffer += char
+
+                if (char && !streamingAction) {
+                  delimiterIndex = buffer.indexOf(delimiter)
                   setCurrentMessage((state) => {
                     if (debug) {
                       console.log({ char })
@@ -108,12 +122,21 @@ const Chat = (props: ChatProps, ref: any) => {
                     resultContent = state + char
                     return resultContent
                   })
+                  if (delimiterIndex !== -1) {
+                    streamingAction = true
+                    resultContent = buffer.slice(0, delimiterIndex);
+                    setCurrentMessage(resultContent)
+                  }
+                } else if (char) {
+                  resultAction = buffer.slice(delimiterIndex + delimiter.length);
                 }
+
                 done = readerDone
               } catch {
                 done = true
               }
             }
+
             // The delay of timeout can not be 0 as it will cause the message to not be rendered in racing condition
             setTimeout(() => {
               if (debug) {
@@ -123,9 +146,11 @@ const Chat = (props: ChatProps, ref: any) => {
                 ...conversation.current,
                 { content: resultContent, role: 'assistant' }
               ]
-
+              handleAugmentations(resultAction);
               setCurrentMessage('')
+              setIsLoading(false)
             }, 1)
+
           } else {
             const result = await response.json()
             if (response.status === 401) {
@@ -138,7 +163,6 @@ const Chat = (props: ChatProps, ref: any) => {
             }
           }
 
-          setIsLoading(false)
         } catch (error: any) {
           console.error(error)
           toast.error(error.message)
@@ -158,6 +182,27 @@ const Chat = (props: ChatProps, ref: any) => {
     },
     [sendMessage]
   )
+
+  const handleButtonClick = (responseText: string) => {
+    setMessage(responseText);
+    setTimeout(() => sendMessage({ preventDefault: () => { } }), 0);
+  };
+
+  const handleAugmentations = (resultAction: string) => {
+    try {
+      const parsedExtractedText = JSON.parse(resultAction);
+      if (parsedExtractedText.augmentation === "response-button") {
+        console.log("ButtonData: " + JSON.stringify(parsedExtractedText));
+        setButtonData(parsedExtractedText.data);
+      }
+      if (parsedExtractedText.augmentation === "animation") {
+        setIsExploding(true);
+        setTimeout(() => setIsExploding(false), 3000);
+      }
+    } catch (error) {
+      console.error("Failed to parse extractedText", error);
+    }
+  }
 
   const clearMessages = () => {
     conversation.current = []
@@ -227,6 +272,12 @@ const Chat = (props: ChatProps, ref: any) => {
         ))}
         {currentMessage && <Message message={{ content: currentMessage, role: 'assistant' }} />}
         <div ref={bottomOfChatRef}></div>
+        {buttonData && (
+          <button onClick={() => handleButtonClick(buttonData["responseText"])} className="rt-Box bg-token-surface active:scale-95 truncate cursor-pointer active rt-r-w-auto response-button">
+            {buttonData["buttonText"]}
+          </button>
+        )}
+        {isExploding && <ConfettiExplosion className="confetti-container" />}
       </ScrollArea>
       <div className="px-4 pb-3">
         <Flex align="end" justify="between" gap="3" className="relative">

@@ -63,3 +63,15 @@
     }
   }
 }
+
+.response-button {
+  margin-bottom: 0.5rem;
+}
+
+.confetti-container {
+  position: fixed;
+  top: 30%;
+  left: 40%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
