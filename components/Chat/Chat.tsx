@@ -10,7 +10,7 @@ import {
   useState
 } from 'react'
 import { Flex, Heading, IconButton, ScrollArea, Tooltip } from '@radix-ui/themes'
-import ConfettiExplosion from 'react-confetti-explosion'; // Import ConfettiExplosion
+import Ajv from "ajv";
 import ContentEditable from 'react-contenteditable'
 import toast from 'react-hot-toast'
 import { AiOutlineClear, AiOutlineLoading3Quarters, AiOutlineUnorderedList } from 'react-icons/ai'
@@ -56,10 +56,6 @@ const Chat = (props: ChatProps, ref: any) => {
 
   const [isLoading, setIsLoading] = useState(false)
 
-  const [buttonData, setButtonData] = useState(null)
-
-  const [isExploding, setIsExploding] = useState(false)
-
   const conversationRef = useRef<ChatMessage[]>()
 
   const [message, setMessage] = useState('')
@@ -71,6 +67,57 @@ const Chat = (props: ChatProps, ref: any) => {
   const conversation = useRef<ChatMessage[]>([])
 
   const bottomOfChatRef = useRef<HTMLDivElement>(null)
+
+  const ajv = new Ajv();
+
+  const schema = {
+    type: 'object',
+    oneOf: [
+      {
+        properties: {
+          augmentation: { const: "response-button" },
+          data: {
+            type: 'object',
+            properties: {
+              buttonText: { type: "string" },
+              responseText: { type: "string" }
+            },
+            additionalProperties: true
+          }
+        },
+        additionalProperties: true
+      },
+      {
+        properties: {
+          augmentation: { const: "animation" },
+          data: { enum: ["Yes", "No", "Excitement", "Success"] }
+        },
+        additionalProperties: true
+      },
+      {
+        properties: {
+          augmentation: { const: "chart" },
+          data: {
+            type: 'object',
+            properties: {
+              type: { enum: ["Pie", "Line", "Bar", "Doughnut", "Radar", "PolarArea", "Bubble", "Scatter"] },
+              data: { }
+            }, additionalProperties: true
+          },
+        }, additionalProperties: true
+      },
+      {
+        properties: {
+          augmentation: { const: "none" }
+        },
+        additionalProperties: true
+      }
+    ]
+  };
+
+
+  const validate = ajv.compile(schema);
+
   const sendMessage = useCallback(
     async (e: any) => {
       if (!isLoading) {
@@ -81,7 +128,6 @@ const Chat = (props: ChatProps, ref: any) => {
           toast.error('Please type a message to continue.')
           return
         }
-        setButtonData(null)
 
         const message = [...conversation.current]
         conversation.current = [...conversation.current, { content: input, role: 'user' }]
@@ -100,12 +146,12 @@ const Chat = (props: ChatProps, ref: any) => {
             const reader = data.getReader()
             const decoder = new TextDecoder('utf-8')
             let done = false
+            let streamingAugmentation = false
             let resultContent = ''
-            let resultAction = ''
-            let streamingAction = false
+            let resultAugmentation = ''
+            let buffer = ""
             const delimiter = "O^%^£O"
             let delimiterIndex = -1
-            let buffer = ""
 
             while (!done) {
               try {
@@ -113,7 +159,7 @@ const Chat = (props: ChatProps, ref: any) => {
                 const char = decoder.decode(value)
                 buffer += char
 
-                if (char && !streamingAction) {
+                if (char && !streamingAugmentation) {
                   delimiterIndex = buffer.indexOf(delimiter)
                   setCurrentMessage((state) => {
                     if (debug) {
@@ -123,12 +169,12 @@ const Chat = (props: ChatProps, ref: any) => {
                     return resultContent
                   })
                   if (delimiterIndex !== -1) {
-                    streamingAction = true
+                    streamingAugmentation = true
                     resultContent = buffer.slice(0, delimiterIndex);
                     setCurrentMessage(resultContent)
                   }
                 } else if (char) {
-                  resultAction = buffer.slice(delimiterIndex + delimiter.length);
+                  resultAugmentation = buffer.slice(delimiterIndex + delimiter.length);
                 }
 
                 done = readerDone
@@ -136,17 +182,36 @@ const Chat = (props: ChatProps, ref: any) => {
                 done = true
               }
             }
+            
+            // console.log(resultAugmentation)
 
             // The delay of timeout can not be 0 as it will cause the message to not be rendered in racing condition
             setTimeout(() => {
               if (debug) {
                 console.log({ resultContent })
               }
-              conversation.current = [
-                ...conversation.current,
-                { content: resultContent, role: 'assistant' }
-              ]
-              handleAugmentations(resultAction);
+
+              let parsedAugmentation
+              try {
+                parsedAugmentation = JSON.parse(resultAugmentation);
+              } catch (error) {
+                console.error("Not a valid JSON object. Error: " + error)
+              }
+
+              const valid = validateData(parsedAugmentation);
+              if (!valid) {
+                console.log('Failed to parse augmentation:', parsedAugmentation);
+                conversation.current = [
+                  ...conversation.current,
+                  { content: resultContent, role: 'assistant'}
+                ];
+              } else {
+                conversation.current = [
+                  ...conversation.current,
+                  { content: resultContent, role: 'assistant', augmentation: parsedAugmentation }
+                ];
+              }
+
               setCurrentMessage('')
               setIsLoading(false)
             }, 1)
@@ -183,26 +248,18 @@ const Chat = (props: ChatProps, ref: any) => {
     [sendMessage]
   )
 
+  const validateData = (data: any) => {
+    const valid = validate(data);
+    if (!valid) {
+      console.log(validate.errors);
+    }
+    return valid;
+  }
+
   const handleButtonClick = (responseText: string) => {
     setMessage(responseText);
     setTimeout(() => sendMessage({ preventDefault: () => { } }), 0);
   };
-
-  const handleAugmentations = (resultAction: string) => {
-    try {
-      const parsedExtractedText = JSON.parse(resultAction);
-      if (parsedExtractedText.augmentation === "response-button") {
-        console.log("ButtonData: " + JSON.stringify(parsedExtractedText));
-        setButtonData(parsedExtractedText.data);
-      }
-      if (parsedExtractedText.augmentation === "animation") {
-        setIsExploding(true);
-        setTimeout(() => setIsExploding(false), 3000);
-      }
-    } catch (error) {
-      console.error("Failed to parse extractedText", error);
-    }
-  }
 
   const clearMessages = () => {
     conversation.current = []
@@ -268,16 +325,10 @@ const Chat = (props: ChatProps, ref: any) => {
         style={{ height: '100%' }}
       >
         {conversation.current.map((item, index) => (
-          <Message key={index} message={item} />
+          <Message key={index} message={item} handleButtonClick={handleButtonClick} />
         ))}
         {currentMessage && <Message message={{ content: currentMessage, role: 'assistant' }} />}
         <div ref={bottomOfChatRef}></div>
-        {buttonData && (
-          <button onClick={() => handleButtonClick(buttonData["responseText"])} className="rt-Box bg-token-surface active:scale-95 truncate cursor-pointer active rt-r-w-auto response-button">
-            {buttonData["buttonText"]}
-          </button>
-        )}
-        {isExploding && <ConfettiExplosion className="confetti-container" />}
       </ScrollArea>
       <div className="px-4 pb-3">
         <Flex align="end" justify="between" gap="3" className="relative">

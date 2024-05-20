@@ -1,31 +1,23 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { Avatar, Flex, IconButton, Tooltip } from '@radix-ui/themes'
-import { FaRegCopy } from 'react-icons/fa'
+import { Avatar, Flex } from '@radix-ui/themes'
+import ConfettiExplosion from 'react-confetti-explosion';
 import { HiUser } from 'react-icons/hi'
 import { RiRobot2Line } from 'react-icons/ri'
 import { Markdown } from '@/components'
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
+import ChartComponent from './ChartComponent';
 import { ChatMessage } from './interface'
+
 
 export interface MessageProps {
   message: ChatMessage
+  handleButtonClick?: (responseText: string) => void;
 }
 
 const Message = (props: MessageProps) => {
-  const { role, content } = props.message
+  const { role, content, augmentation } = props.message
+  const { handleButtonClick } = props
   const isUser = role === 'user'
-  const copy = useCopyToClipboard()
-  const [tooltipOpen, setTooltipOpen] = useState<boolean>(false)
-
-  const onCopy = useCallback(() => {
-    copy(content, (isSuccess) => {
-      if (isSuccess) {
-        setTooltipOpen(true)
-      }
-    })
-  }, [content, copy])
 
   return (
     <Flex gap="4" className="mb-5">
@@ -50,17 +42,26 @@ const Message = (props: MessageProps) => {
           <Flex direction="column" gap="4">
             <Markdown>{content}</Markdown>
             <Flex gap="4" align="center">
-              <Tooltip open={tooltipOpen} content="Copied!">
-                <IconButton
-                  className="cursor-pointer"
-                  variant="outline"
-                  color="gray"
-                  onClick={onCopy}
-                  onMouseLeave={() => setTooltipOpen(false)}
-                >
-                  <FaRegCopy />
-                </IconButton>
-              </Tooltip>
+
+              {augmentation && (
+                <>
+                  {augmentation.augmentation === "animation" && (
+                    <ConfettiExplosion className="confetti-container" />
+                  )}
+                  {augmentation.augmentation === "response-button" && (
+                    <button onClick={() => handleButtonClick?.(augmentation.data.responseText)} className="rt-Box bg-token-surface active:scale-95 truncate cursor-pointer active rt-r-w-auto response-button">
+                      {augmentation.data.buttonText}
+                    </button>
+                  )}
+                  {augmentation.augmentation === "chart" && (
+                    <div className="chart-container">
+                      <ChartComponent config={augmentation.data} />
+                    </div>
+                  )}
+
+                </>
+              )}
+
             </Flex>
           </Flex>
         )}

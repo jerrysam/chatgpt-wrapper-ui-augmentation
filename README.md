@@ -1,4 +1,4 @@
-# ChatGPT with UI Animations
+# ChatGPT with UI Automations
 
 ## Origin story
 
@@ -18,13 +18,15 @@ So, what do we imagine it doing?
 - Control web apps: As a sidebar in gmail, it could trigger a script that selects all unread newsletters and marks them as read.
 - And of course, make a Fritz bot track my face and remember the moments I got excited!
 
-<img src="https://private-user-images.githubusercontent.com/4795545/332010594-d875f916-9601-478a-85f5-7bcd60516aa6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTYxOTY4OTUsIm5iZiI6MTcxNjE5NjU5NSwicGF0aCI6Ii80Nzk1NTQ1LzMzMjAxMDU5NC1kODc1ZjkxNi05NjAxLTQ3OGEtODVmNS03YmNkNjA1MTZhYTYucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MDUyMCUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDA1MjBUMDkxNjM1WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9ZTIxNWM3N2FlYzhjODIyZWQ1OWI4YzRjMWI0ODkxZTVlMTk3OGZkNDg2Nzg5M2M0ZjkwYmMwNjRhNTQwNjFjMCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmYWN0b3JfaWQ9MCZrZXlfaWQ9MCZyZXBvX2lkPTAifQ.Bc0OS0ljgJ-6ZXdh134KWlp9x9tarZ0R5TgcdTZhwyA" height="200">
+<img src="https://i.postimg.cc/qRYFDGXT/Fritzbot.png" height="200">
 
 ## Demo
 
-Visit the [Demo Site](https://bit.ly/GPT-UI)
+Visit the [Demo Site](https://bit.ly/gpt-browser-automation)
 
-[<img src="https://img.youtube.com/vi/m4s7Y80rwOI/maxresdefault.jpg">](https://youtu.be/m4s7Y80rwOI)
+**Watch demo video:** (Open this link in a new tab)
+
+[<img src="https://img.youtube.com/vi/e-lzydeDF0s/maxresdefault.jpg" target="_blank">](https://youtu.be/e-lzydeDF0s)
 
 ## How its built
 
@@ -48,6 +50,7 @@ Visit the [Demo Site](https://bit.ly/GPT-UI)
 
 ## Future work
 
+- Test on mobiel and across browsers
 - Implement an interactive chart
 - Implement a UI automation (e.g. close sidebar)
 - Log all the ways others chat with this bot and adapt the prompt accordingly (now I wish I had a backend and logging message history)
