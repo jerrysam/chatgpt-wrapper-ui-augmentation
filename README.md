@@ -45,17 +45,25 @@ Visit the [Demo Site](https://bit.ly/gpt-browser-automation)
 - By using an open source repo, we're able to build large projects quickly and familiarise myself with other peoples code (or other agents).
 - By merging the response and augmentation in one message, we significantly reduce the required LLM calls
 - By asking the LLM for a JSON object instead of code, we reduce security risks by writing and approving executed code separately before loading into the client. It also reduces the burden for a single LLM response to have a great answer and lots of working code.
-- In future, UI automations can be written by multi-agent systems to iterate until working. They can have a browser tool available to them in order to test their code, look at the DOM, and also tkae screenshots for coordinates of where to click, since GPT-4o has much better vision capabilities.
 - I decided not to optimise any inherited code unless I edited it, and I continued the same style as the inherited repo. I did optimise my own code for performance, readibility, and simplicity (DRY).
 
 ## Future work
 
-- Test on mobiel and across browsers
-- Implement an interactive chart
+**To do:**
+
+- Test on mobile and across browsers
+- Full response in JSON?: Explore whether I get better performance asking LLM for a JSON object with "reply" and "augmentation", then implement the better one. Risk that when JSON is invalid, the user sees nothing or a full object in this case.
+- Update steamingAugmentation code with a buffer that operates at a 3 "char" delay, so the delimiter never flashes on the screen..
 - Implement a UI automation (e.g. close sidebar)
-- Log all the ways others chat with this bot and adapt the prompt accordingly (now I wish I had a backend and logging message history)
+- Log chats for analysis: Log all the ways others chat with this bot and adapt the prompt accordingly (now I wish I had a backend and logging message history)
 - Transform into a chrome extension that creates a sidebar in another chat UI (if multi-agent systems can write good enough frontend automations), and trigger automations in any web app
-- Edit to a Bring Your Own Key model
+- Edit to a "Bring Your Own Key" model
+- [DONE] Add chain of thought and/or least to most reasoning (refer to Data Analyst for example), to run conditionally on complex tasks (to save token cost)
+- [DONE] Implement an interactive chart
+
+**Long term:**
+
+- UI automations can be written by multi-agent systems to iterate until working. They can have a browser tool available to them in order to test their code, look at the DOM, and also tkae screenshots for coordinates of where to click, since GPT-4o has much better vision capabilities.
 
 ## Prompt engineering notes
 
@@ -64,6 +72,8 @@ Visit the [Demo Site](https://bit.ly/gpt-browser-automation)
 LLMs perform better if told they are experts
 
 > You are an expert in UI animations and code.
+
+Main instructions at the top, which has more weighting. Don't put the example far at the end (far from the main prompt), because the additional distance reduces its weight.
 
 Found a relatively unique string as a delimiter
 
@@ -130,11 +140,12 @@ Since I used chatGPT to help me code (when it understood the problem well enough
 1.  It has a tendency to use deprecated code, probably because there's more of it on the internet (which is the training data). Prompt agents to use newer code (it helped for me)
 2.  It has a tendency to solve problems with more code, which could become a whack-a-mole of spaghetti code. What prompts could make it remove code?
 
-- Maybe an agent can take a diff from the last working version and suggest what code is extraneous, wrong, or could be refactored.
+    - Maybe an agent can take a diff from the last working version and suggest what code is extraneous, wrong, or could be refactored.
 
 3.  Working code has multiple reasons for being written the way it is. ChatGPT might only detect some of those reasons, and implement changes that break the remaining reasons. What prompts could avoid this?
+    - Would it help if there was a spec for each part of the code? Perhaps a huge amount of comments in the codebase? Could that spec be generated at the time of editing?
 
-- Would it help if there was a spec for each part of the code? Perhaps a huge amount of comments in the codebase? Could that spec be generated at the time of editing?
+AutoML engineer system and prompts outlined in this blog: https://lilianweng.github.io/posts/2023-06-23-agent/
 
 ## Prerequisites
 
