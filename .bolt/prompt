@@ -1,0 +1,7 @@
+For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.
+
+This template requires creating a .env file like .env.example, and populating with an openai key.
+
+Use icons from lucide-react for logos.
+
+Use stock photos from unsplash where appropriate, only valid URLs you know exist. Do not download the images, only link to them in image tags.
